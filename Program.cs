@@ -1,9 +1,15 @@
+using MilkbooksImageProcessor.Services.Interfaces;
+using MilkbooksImageProcessor.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddHttpClient<IDownloadService, DownloadService>();
+builder.Services.AddScoped<IResizeService, ResizeService>(); 
+
+builder.Services.AddControllers();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -19,8 +25,11 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapControllers();
+
+app.MapFallbackToFile("/app/index.html");
 
 app.Run();

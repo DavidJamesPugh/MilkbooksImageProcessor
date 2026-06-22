@@ -1,0 +1,18 @@
+<h1>Unsplash Image Processor</h1>
+
+<input [(ngModel)]="query" placeholder="Enter Query Term" />
+
+<button (click)="downloadImages()">
+  Download images
+</button>
+
+@if (statusMessage){
+
+<p>{{ statusMessage }}</p>
+}
+
+@for (img of images; track img.id) {
+  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top: 20px;">
+      <img [src]="img.filePath" style="width:100%; height:100%; object-fit:cover;" />
+  </div>
+}
