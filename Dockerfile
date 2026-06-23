@@ -18,14 +18,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-build
 WORKDIR /src
 
 COPY *.csproj ./
-RUN dotnet restore
+RUN dotnet restore -r linux-x64
 
 COPY . ./
 
 # Bring in the Angular output before publishing so it ends up in wwwroot
 COPY --from=angular-build /app/wwwroot/app ./wwwroot/app
 
-RUN dotnet publish -c Release -o /publish
+RUN dotnet publish -c Release -r linux-x64 --self-contained false -o /publish
 
 
 # ── Stage 3: Runtime ──────────────────────────────────────────────────────────
