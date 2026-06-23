@@ -31,6 +31,15 @@ RUN dotnet publish -c Release -o /publish
 # ── Stage 3: Runtime ──────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 
+# SkiaSharp's native library (libSkiaSharp.so) is dynamically linked against
+# these system libraries. The dotnet/aspnet slim image omits them by default,
+# causing SkiaSharp to fail to load silently — resulting in resize 404s.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libfontconfig1 \
+    libglib2.0-0 \
+    libharfbuzz0b \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=dotnet-build /publish ./
