@@ -1,7 +1,9 @@
-﻿namespace MilkbooksImageProcessor.Services.Interfaces
+﻿using MilkbooksImageProcessor.Models;
+
+namespace MilkbooksImageProcessor.Services.Interfaces
 {
     public interface IResizeService
     {
-        Task ResizeImages();
+        bool ResizeImage(ImageVariant fullImage, ImageVariantType imageVariantType);
     }
 }

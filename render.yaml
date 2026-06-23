@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: milkbooks-image-processor
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: UNSPLASH_API_KEY
+        sync: false          # you'll paste this in the Render dashboard
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production

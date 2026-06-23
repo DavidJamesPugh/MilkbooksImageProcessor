@@ -1,18 +1,83 @@
-<h1>Unsplash Image Processor</h1>
+<header class="banner">
+  <svg class="milk-title" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+    viewBox="0 0 193.1 44" style="enable-background:new 0 0 193.1 44;" xml:space="preserve">
+    <g>
+      <polygon points="0.4,0.5 13.4,0.5 28.5,33.9 43.4,0.5 56.3,0.5 56.3,43.6 47.8,43.6 48.2,8 48.1,8 32.2,43.6
+        24.5,43.6 8.7,8 8.5,8 8.9,43.6 0.4,43.6"></polygon>
+      <rect x="73.6" y="0.5" class="st0" width="9" height="43"></rect>
+      <polygon points="99.8,0.5 108.9,0.5 108.9,36.5 135,36.5 135,43.6 99.8,43.6"></polygon>
+      <polygon points="148.5,0.5 157.5,0.5 157.5,20.5 179.5,0.5 191.9,0.5 171.8,18 193.2,43.6 180.9,43.6 164.8,23.7
+        157.5,30.2 157.5,43.6 148.5,43.6"></polygon>
+    </g>
+  </svg>
+  <p class="banner-subtitle">Unsplash Image Processor</p>
+</header>
 
-<input [(ngModel)]="query" placeholder="Enter Query Term" />
-
-<button (click)="downloadImages()">
-  Download images
-</button>
-
-@if (statusMessage){
-
-<p>{{ statusMessage }}</p>
-}
-
-@for (img of images; track img.id) {
-  <div style="display:flex; flex-wrap:wrap; gap:12px; margin-top: 20px;">
-      <img [src]="img.filePath" style="width:100%; height:100%; object-fit:cover;" />
+<main class="content">
+  <div class="search-row">
+    <input
+      [(ngModel)]="query"
+      placeholder="Search images…"
+      (keydown.enter)="downloadImages()"
+    />
+    <button (click)="downloadImages()" [disabled]="loading()">
+      {{ loading() ? 'Loading…' : 'Show Queried Images' }}
+    </button>
   </div>
-}
+
+  @if (loading() || progress() > 0) {
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" [style.width.%]="progress()"></div>
+      </div>
+      <span class="progress-label">{{ progressLabel() }}</span>
+    </div>
+  }
+
+  <div class="image-pile">
+    @for (img of images(); track img.id) {
+      <div class="image-card">
+        <img [src]="img.thumbnailUrl" [alt]="img.altText" />
+        <div class="card-meta">
+          <span class="card-meta__author">{{ img.author }}</span>
+          <span class="card-meta__likes">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5
+                       2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09
+                       C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5
+                       c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            {{ img.likes | number }}
+          </span>
+        </div>
+        <div class="download-overlay">
+          <a class="download-btn" [href]="img.fullUrl"  [download]="img.id + '_full.jpg'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Full
+          </a>
+          <a class="download-btn" [href]="img.smallUrl" [download]="img.id + '_small.jpg'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Small
+          </a>
+          <a class="download-btn" [href]="img.thumbnailUrl" [download]="img.id + '_thumb.jpg'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Thumb
+          </a>
+        </div>
+      </div>
+    }
+  </div>
+</main>

@@ -1,0 +1,45 @@
+# ── Stage 1: Build Angular ────────────────────────────────────────────────────
+FROM node:22-alpine AS angular-build
+
+WORKDIR /app/client
+
+COPY Milkbooks.Client/package*.json ./
+RUN npm ci
+
+COPY Milkbooks.Client/ ./
+RUN npm run build
+# angular.json outputPath is "../wwwroot/app" relative to Milkbooks.Client/
+# so the built files land at /app/wwwroot/app
+
+
+# ── Stage 2: Build .NET ───────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-build
+
+WORKDIR /src
+
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . ./
+
+# Bring in the Angular output before publishing so it ends up in wwwroot
+COPY --from=angular-build /app/wwwroot/app ./wwwroot/app
+
+RUN dotnet publish -c Release -o /publish
+
+
+# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+
+WORKDIR /app
+
+COPY --from=dotnet-build /publish ./
+
+# Pre-create the image storage folders so the app can write to them immediately
+RUN mkdir -p wwwroot/images/full \
+             wwwroot/images/256 \
+             wwwroot/images/1024
+
+EXPOSE 8080
+
+CMD ["dotnet", "MilkbooksImageProcessor.dll"]
