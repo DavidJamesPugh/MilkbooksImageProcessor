@@ -60,7 +60,7 @@ namespace MilkbooksImageProcessor.Services
 
                 using var resized = bitmap.Resize(
                     new SKImageInfo(width, height),
-                    SKSamplingOptions.Default);
+                    SKFilterQuality.High);
 
                 if (resized == null)
                 {
