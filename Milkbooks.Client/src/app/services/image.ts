@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ImageResponseItem } from '../models/image-result';
 
 export type SseProgressEvent = { type: 'progress'; current: number; total: number; image?: ImageResponseItem };
-export type SseCompleteEvent = { type: 'complete'; successCount: number; failureCount: number; isPartialResult: boolean };
+export type SseCompleteEvent = { type: 'complete'; successCount: number; failureCount: number; isPartialResult: boolean; requestsRemaining: number };
 export type SseErrorEvent    = { type: 'error'; error: string };
 export type SseMessage = SseProgressEvent | SseCompleteEvent | SseErrorEvent;
 

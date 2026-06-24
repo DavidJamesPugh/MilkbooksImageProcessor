@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using MilkbooksImageProcessor.Models;
+using MilkbooksImageProcessor.Services;
 using MilkbooksImageProcessor.Services.Interfaces;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
@@ -13,6 +15,8 @@ namespace MilkbooksImageProcessor.Controllers
     public class DownloadController : ControllerBase
     {
         private readonly IDownloadService _downloadService;
+        private readonly RateLimitCounterService _rateLimitCounter;
+        private readonly IWebHostEnvironment _env;
         private readonly ILogger<DownloadController> _logger;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -21,9 +25,15 @@ namespace MilkbooksImageProcessor.Controllers
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        public DownloadController(IDownloadService downloadService, ILogger<DownloadController> logger)
+        public DownloadController(
+            IDownloadService downloadService,
+            RateLimitCounterService rateLimitCounter,
+            IWebHostEnvironment env,
+            ILogger<DownloadController> logger)
         {
             _downloadService = downloadService;
+            _rateLimitCounter = rateLimitCounter;
+            _env = env;
             _logger = logger;
         }
 
@@ -38,6 +48,8 @@ namespace MilkbooksImageProcessor.Controllers
                 return;
             }
 
+            _rateLimitCounter.Increment();
+
             Response.StatusCode = 200;
             Response.Headers.ContentType = "text/event-stream";
             Response.Headers.CacheControl = "no-cache";
@@ -46,7 +58,6 @@ namespace MilkbooksImageProcessor.Controllers
             var channel = Channel.CreateUnbounded<ImageProgress>(
                 new UnboundedChannelOptions { SingleReader = true });
 
-            // Service writes progress events and calls TryComplete() before returning
             var downloadTask = _downloadService.DownloadImagesAsync(query, cancellationToken, channel.Writer);
 
             await foreach (var p in channel.Reader.ReadAllAsync(cancellationToken))
@@ -62,7 +73,8 @@ namespace MilkbooksImageProcessor.Controllers
                     type = "complete",
                     successCount = result.SuccessCount,
                     failureCount = result.FailureCount,
-                    isPartialResult = result.IsPartialResult
+                    isPartialResult = result.IsPartialResult,
+                    requestsRemaining = _rateLimitCounter.Remaining
                 }, cancellationToken);
             }
             catch (HttpRequestException ex)
@@ -76,6 +88,56 @@ namespace MilkbooksImageProcessor.Controllers
                 await WriteDataAsync(new { type = "error", error = "An unexpected error occurred." }, cancellationToken);
             }
         }
+
+        [HttpGet("zip")]
+        public async Task DownloadZip(
+            [FromQuery] string ids,
+            [FromQuery] string size = "small",
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(ids))
+            {
+                Response.StatusCode = 400;
+                return;
+            }
+
+            var imageIds = ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var (folder, suffix) = GetFolderAndSuffix(size);
+
+            // Build into MemoryStream first — ZipArchive.Dispose() writes the central
+            // directory synchronously, which Kestrel disallows on Response.Body directly.
+            using var ms = new MemoryStream();
+
+            using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                foreach (var id in imageIds)
+                {
+                    var filePath = Path.Combine(_env.WebRootPath, "images", folder, $"{id}{suffix}");
+                    if (!System.IO.File.Exists(filePath)) continue;
+
+                    var entry = zip.CreateEntry($"{id}{suffix}", CompressionLevel.Fastest);
+                    await using var entryStream = entry.Open();
+                    await using var fileStream = System.IO.File.OpenRead(filePath);
+                    await fileStream.CopyToAsync(entryStream, cancellationToken);
+                }
+            } // Dispose writes central directory synchronously to MemoryStream — allowed
+
+            Response.StatusCode = 200;
+            Response.ContentType = "application/zip";
+            Response.Headers.ContentDisposition = $"attachment; filename=\"milkbooks_{size}.zip\"";
+            Response.ContentLength = ms.Length;
+
+            ms.Position = 0;
+            await ms.CopyToAsync(Response.Body, cancellationToken);
+        }
+
+        private static (string folder, string suffix) GetFolderAndSuffix(string size) =>
+            size.ToLowerInvariant() switch
+            {
+                "full"  => ("full",  ".jpg"),
+                "thumb" => ($"{ImageSizes.Thumbnail}", $"_{ImageSizes.Thumbnail}.jpg"),
+                _       => ($"{ImageSizes.Small}",     $"_{ImageSizes.Small}.jpg")
+            };
 
         private async Task WriteDataAsync(object data, CancellationToken ct)
         {

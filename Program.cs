@@ -14,6 +14,8 @@ builder.WebHost.UseUrls($"http://*:{port}");
 builder.Services.AddHttpClient<IDownloadService, DownloadService>();
 builder.Services.AddScoped<IResizeService, ResizeService>();
 
+
+//Add global rate limit. We would need to extend this to be for each client
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("images", policy =>
@@ -27,6 +29,7 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
+builder.Services.AddSingleton<RateLimitCounterService>();
 builder.Services.AddHostedService<ImageCleanupService>();
 
 builder.Services.AddControllers();

@@ -2,8 +2,20 @@
 
 Input a query string to search images from the Unsplash API. Images are displayed in the UI.
 
-Clicking on that image will download the specified version of the image. 
+Hovering on that image will show options to download the Full, Thumb, or Small size of that image. 
+Downloading the Zip will download all images currently displayed
+
+Clicking the previous search term will search that term again
+
+Images older than 1 hour are deleted from the server  every 15 minutes to save storage space.
 
 A toast popup will show any errors or success messages.
 
 DockerFile is included to deploy on Render or other containerised environments
+
+
+
+# Next steps for any deployment:
+-Obfuscate ClientAPIKey if deploying to a wider userbase
+-A history page with previous search terms that snapshot those images
+-A favourites page to save images to a local database and view them later
