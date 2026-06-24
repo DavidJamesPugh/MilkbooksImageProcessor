@@ -14,19 +14,17 @@ A toast popup will show any errors or success messages.
 DockerFile is included to deploy on Render or other containerised environments
 
 
-To run: 
+To run:  
+cd Milkbooks.Client  
+ng build --configuration production  
 
-cd Milkbooks.Client
-
-ng build --configuration production
-
-This will copy the built files to the Milkbooks.Server/wwwroot folder. 
-Build the C# server project. 
-Then run the server project to start the application.
+This will copy the built files to the Milkbooks.Server/wwwroot folder.   
+Build the C# server project.   
+Then run the server project to start the application.  
 
 Navigate to http://localhost:8080/app to view the application.
 
-# Next steps for any deployment:
--Obfuscate ClientAPIKey if deploying to a wider userbase
--A history page with previous search terms that snapshot those images
--A favourites page to save images to a local database and view them later
+# Next steps for any deployment:  
+-Obfuscate ClientAPIKey if deploying to a wider userbase  
+-A history page with previous search terms that snapshot those images  
+-A favourites page to save images to a local database and view them later  
