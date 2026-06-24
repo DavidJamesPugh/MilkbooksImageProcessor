@@ -16,6 +16,7 @@ DockerFile is included to deploy on Render or other containerised environments
 
 To run:  
 cd Milkbooks.Client  
+npm install  
 ng build --configuration production  
 
 This will copy the built files to the Milkbooks.Server/wwwroot folder.   
